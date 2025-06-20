@@ -3,25 +3,48 @@
 
 @section('content')
 <div class="container py-4">
-  {{-- errores --}}
-  @if($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show">
-      <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-      <button class="btn-close" data-bs-dismiss="alert"></button>
+  
+{{-- errores de validación --}}
+@if($errors->any())
+  <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-3 py-2 px-3" role="alert" style="font-size: 0.95rem;">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div class="flex-grow-1">
+      <ul class="mb-0 ps-3">
+        @foreach($errors->all() as $e)
+          <li>{{ $e }}</li>
+        @endforeach
+      </ul>
     </div>
-  @endif
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+  </div>
+@endif
+
+{{-- errores de sesión personalizados --}}
+@if(session('error'))
+  <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-3 py-2 px-3" role="alert" style="font-size: 0.95rem;">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div class="flex-grow-1">
+      {{ session('error') }}
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+  </div>
+@endif
+
+
 
   <form action="{{ route('roles.store') }}" method="POST">
     @csrf
     <div class="card shadow border-0 mb-4">
-      <div class="card-header" style="background:#6f42c1;color:#fff">
+      <div class="card-header" style="background:#2e8b57;color:#fff">
         <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i> Crear un Rol</h5>
       </div>
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Nombre *</label>
-            <input id="input-nombre" name="nombre" class="form-control" required value="{{ old('nombre') }}">
+            <label class="form-label fw-semibold"> Nombre <span class="text-danger">*</span>
+            </label>
+
+            <input id="input-nombre" name="nombre" class="form-control" maxlength="15" required value="{{ old('nombre') }}">
           </div>
           <div class="col-md-8">
             <label class="form-label fw-semibold">Descripción</label>
@@ -71,7 +94,7 @@
       @endforeach
     </div>
 
-    <button class="btn text-white" style="background:#6f42c1">
+    <button class="btn text-white" style="background:#2e8b57">
         <i class="bi bi-save2"></i> Guardar
     </button>
     <a href="{{ route('roles.index') }}" class="btn btn-secondary">Cancelar</a>
@@ -81,22 +104,42 @@
 
 @push('js')
 <script>
-  const yes = document.getElementById('fa_yes');
-  const no = document.getElementById('fa_no');
-  const cb = document.querySelectorAll('.perm');
-  function toggle(d){ cb.forEach(x=>{x.disabled=d; if(d) x.checked=true;}); }
-  toggle(yes && yes.checked);
-  yes && yes.addEventListener('change',()=>toggle(true));
-  no  && no .addEventListener('change',()=>toggle(false));
+/* ---------- Referencias ---------- */
+const yes = document.getElementById('fa_yes');   // radio "Sí"
+const no  = document.getElementById('fa_no');    // radio "No"
+const perms = document.querySelectorAll('.perm'); // todos los check-box
 
-  // Solo letras para el input nombre
-  document.getElementById('input-nombre').addEventListener('keypress', function(e) {
-    const char = String.fromCharCode(e.keyCode);
-    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    if (!regex.test(char)) {
-      e.preventDefault();
+/* ---------- Lógica ---------- */
+function togglePermisos(full) {
+    perms.forEach(cb => {
+        cb.disabled = full;          // deshabilita si es acceso completo
+        cb.checked  = full ? true : false; // ✔️ marca todos o los limpia
+    });
+}
+
+/* ---------- Estado inicial ---------- */
+togglePermisos(yes?.checked);        // si "Sí" ya viene marcado, actúa
+
+/* ---------- Listeners ---------- */
+yes?.addEventListener('change', () => togglePermisos(true));
+no ?.addEventListener('change', () => togglePermisos(false));
+
+/* ---------- Validación campo “Nombre” ---------- */
+const inputNombre = document.getElementById('input-nombre');
+const soloLetras  = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]$/;
+
+inputNombre.addEventListener('keypress', e => {
+    if (!soloLetras.test(e.key) || inputNombre.value.length >= 15) {
+        e.preventDefault();          // bloquea caracteres inválidos o extra
     }
-  });
+});
+inputNombre.addEventListener('input', () => {
+    inputNombre.value = inputNombre.value
+                          .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]+/g,'')
+                          .slice(0,15);
+});
 </script>
+
+
 @endpush
 

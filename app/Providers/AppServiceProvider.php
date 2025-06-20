@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;   // ← importa Blade
 use Illuminate\Support\Facades\Auth;    // ← importa Auth
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        
         /*
         |--------------------------------------------------------------
         | Directiva Blade: @permiso('nombre.permiso')
@@ -41,5 +43,6 @@ class AppServiceProvider extends ServiceProvider
                        ->where('nombre', $nombre)
                        ->exists();
         });
+        Paginator::useBootstrapFive();
     }
 }

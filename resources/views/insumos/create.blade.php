@@ -30,7 +30,7 @@
 
   {{-- === FORMULARIO === --}}
   <div class="card shadow border-0">
-    <div class="card-header text-white" style="background:#008080;">
+    <div class="card-header text-white" style="background:#2e8b57;">
       <h5 class="mb-0"><i class="bi bi-plus-circle-fill me-2"></i> Crear nuevo insumo</h5>
     </div>
 
@@ -50,7 +50,7 @@
 
           {{-- UNIDAD --}}
           <div class="col-md-6">
-            <label class="form-label fw-semibold"><i class="bi bi-bounding-box"></i> Unidad <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold"><i class="bi bi-bounding-box"></i> Unidad de medida <span class="text-danger">*</span></label>
             <input name="unidad" id="unidad" value="{{ old('unidad') }}" class="form-control"
                    maxlength="20" required autocomplete="off">
             <div class="valid-feedback">Correcto</div>

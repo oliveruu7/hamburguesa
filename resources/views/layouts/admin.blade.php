@@ -1,10 +1,10 @@
- {{-- resources/views/layouts/admin.blade.php --}}
+{{-- resources/views/layouts/admin.blade.php --}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
     <meta charset="UTF-8">
     <title>@yield('title', 'Panel Admin')</title>
@@ -15,102 +15,148 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
+    {{--  ⬇️  Si ya compilas con Vite, pasa este bloque a resources/css/admin.css y agrega la entrada en vite.config.js --}}
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f8f9fa;
-            margin: 0;
-        }
+/* ===== BASE ===== */
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+    font-family:'Poppins',sans-serif;
+    background:#f8f9fa;
+}
 
-        .wrapper {
-            display: flex;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+/* ===== ESTRUCTURA ===== */
+.wrapper{
+    display:flex;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+}
+.sidebar{
+    /* color de fondo de la barra lateral */
+    width:250px;
+    background:#2f4f4f;
+    color:#fff;
+    flex-shrink:0;
+    transition:transform .3s ease,width .3s ease;
+}
+.main-content{
+    flex-grow:1;
+    padding:25px;
+    transition:padding .3s ease;
+}
 
-        /* -------- SIDEBAR -------- */
-        .sidebar {
-            width: 250px;
-            background: #1e3c72;
-            color: #fff;
-            transition: transform .3s;
-            z-index: 1050;
-        }
+/* ===== SIDEBAR DETALLE ===== */
+.sidebar-header{
+    padding:1rem;
+    text-align:center;
+    border-bottom:1px solid #444;
+}
+.sidebar-header img{
+    width:60px;height:60px;border-radius:50%;margin-bottom:10px;
+}
+.sidebar .nav-link{
+    color:#fff;
+    padding:10px 20px;
+    display:flex;
+    gap:10px;
+    transition:background .3s;
+}
+.sidebar .nav-link:hover,
+/*color de fondo al pasar el mouse sobre los modulos */
+.sidebar .nav-link.active{background:#708090;}
 
-        .sidebar.hidden {
-            transform: translateX(-100%);
-        }
+/* ===== TOPBAR ===== */
+.topbar{
+    height:60px;
+    background:#fff;
+    color:#1e3c72;
+    border-bottom:1px solid #dee2e6;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    position:sticky;
+    top:0;
+    z-index:1040;
+}
+.menu-toggle{
+    font-size:1.5rem;
+    background:none;
+    border:none;
+    color:#1e3c72;
+}
 
-        .sidebar-header {
-            padding: 1rem;
-            text-align: center;
-            border-bottom: 1px solid #444;
-        }
+/* ===== OVERLAY (móviles) ===== */
+.overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.4);
+    backdrop-filter:blur(2px);
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .3s ease;
+    z-index:1030;
+}
 
-        .sidebar-header img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-bottom: 10px;
-        }
+/* ===== DESKTOP (≥768 px) ===== */
+@media (min-width:768px){
+    /* barra lateral visible por defecto */
+    body.collapsed .sidebar{display:none;}
+    body.collapsed .main-content{padding-left:25px;}
+}
 
-        .sidebar .nav-link {
-            color: #fff;
-            padding: 10px 20px;
-            display: flex;
-            gap: 10px;
-            transition: background .3s;
-        }
+/* ===== MOBILE (<768 px) ===== */
+@media (max-width:767.98px){
+    .sidebar{
+        position:fixed;
+        left:0;
+        top:0;
+        height:100vh;
+        transform:translateX(-100%);
+        z-index:1050;
+    }
+    .wrapper.sidebar-open .sidebar{transform:translateX(0);}
+    .wrapper.sidebar-open .overlay{
+        opacity:1;
+        visibility:visible;
+    }
+    .main-content{padding-top:70px;} /* dejar espacio para la topbar fija */
+}
 
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background: #2a5298;
-        }
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(255,255,255,.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:2000;
+    visibility:hidden;
+    opacity:0;
+    transition:opacity .2s ease;
+}
+.loading-overlay.active{visibility:visible;opacity:1;}
+.loading-overlay .spinner{
+    width:3rem;height:3rem;
+    border:.5rem solid #1e3c72;
+    border-top-color:transparent;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-        /* -------- TOPBAR -------- */
-        .topbar {
-            height: 60px;
-            background: #fff;
-            color: #1e3c72;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1040;
-        }
-
-        .menu-toggle {
-            font-size: 1.5rem;
-            background: none;
-            border: none;
-            color: #1e3c72;
-        }
-
-        /* -------- CONTENIDO -------- */
-        .main-content {
-            flex-grow: 1;
-            padding: 25px;
-        }
-
-        @media(max-width:768px){
-            .sidebar {
-                position: absolute;
-                height: 100%;
-            }
-            .main-content {
-                padding-top: 70px;
-            }
-        }
     </style>
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 </head>
 <body>
 
-<div class="wrapper">
+<div class="wrapper" id="wrapper">
 
-    {{-- ========= SIDEBAR ========= --}}
+    {{-- ===== SIDEBAR ===== --}}
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="{{ Auth::user()->perfil_link ?? 'https://via.placeholder.com/60' }}" alt="avatar">
@@ -120,6 +166,7 @@
         </div>
 
         <ul class="nav flex-column mt-2">
+            {{-- === enlaces a módulos (sin cambios) === --}}
             @permiso('main.menu.view')
                 <li>
                     <a class="nav-link {{ request()->routeIs('admin') ? 'active' : '' }}" href="{{ route('admin') }}">
@@ -127,15 +174,13 @@
                     </a>
                 </li>
             @endpermiso
-
             @permiso('products.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}" href="{{ route('products.index') }}">
-                        <i class="bi bi-grid-fill"></i> Productos
+                        <i class="bi bi-grid-fill"></i> Menú ZombieBurger 
                     </a>
                 </li>
             @endpermiso
-
             @permiso('users.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}" href="{{ route('usuarios.index') }}">
@@ -143,7 +188,6 @@
                     </a>
                 </li>
             @endpermiso
-
             @permiso('roles.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}" href="{{ route('roles.index') }}">
@@ -151,7 +195,6 @@
                     </a>
                 </li>
             @endpermiso
-
             @permiso('sales.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }}" href="{{ route('sales.index') }}">
@@ -159,7 +202,6 @@
                     </a>
                 </li>
             @endpermiso
-
             @permiso('clientes.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}" href="{{ route('clientes.index') }}">
@@ -167,56 +209,65 @@
                     </a>
                 </li>
             @endpermiso
-
             @permiso('insumos.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}" href="{{ route('insumos.index') }}">
-                        <i class="bi bi-box-seam"></i> Almacen
+                        <i class="bi bi-box-seam"></i> Almacén
                     </a>
                 </li>
             @endpermiso
-
             @permiso('recetas.index')
                 <li>
                     <a class="nav-link {{ request()->routeIs('recetas.*') ? 'active' : '' }}" href="{{ route('recetas.index') }}">
-                      <i class="bi bi-list-ul"></i> Recetas
+                        <i class="bi bi-list-ul"></i> Recetas
+                    </a>
+                </li>
+            @endpermiso
+            @permiso('compras.index')
+                <li>
+                    <a class="nav-link {{ request()->routeIs('compras.*') ? 'active' : '' }}" href="{{ route('compras.index') }}">
+                        <i class="bi bi-bag-check-fill"></i> Compras
+                    </a>
+                </li>
+            @endpermiso
+            @permiso('proveedores.index')
+            <li>
+              <a class="nav-link {{ request()->routeIs('proveedores.*') ? 'active' : '' }}" href="{{ route('proveedores.index') }}">
+                <i class="bi bi-truck"></i> Proveedores
+              </a>
+            </li>
+            @endpermiso
+            @permiso('salidas.index')
+                <li>
+                    <a class="nav-link {{ request()->routeIs('salidas.*') ? 'active' : '' }}" href="{{ route('salidas.index') }}">
+                        <i class="bi bi-box-arrow-up"></i> Salidas
                     </a>
                 </li>
             @endpermiso
 
-           @permiso('compras.index')
+            {{-- ===== Cerrar sesión ===== --}}
 <li>
-    <a class="nav-link {{ request()->routeIs('compras.*') ? 'active' : '' }}" href="{{ route('compras.index') }}">
-        <i class="bi bi-bag-check-fill"></i> Compras
-    </a>
+    {{-- evita acción por defecto para manejarla con JS --}}
+    <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="d-inline">
+        @csrf
+        <button type="submit" class="nav-link btn btn-link text-start text-white" style="padding-left:20px;">
+            <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+        </button>
+    </form>
 </li>
-@endpermiso
 
+{{-- overlay loading, fuera de .wrapper para tapar toda la pantalla --}}
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
 
-@permiso('salidas.index')
-  <li>
-    <a class="nav-link {{ request()->routeIs('salidas.*') ? 'active' : '' }}" href="{{ route('salidas.index') }}">
-      <i class="bi bi-box-arrow-up"></i> Salidas
-    </a>
-  </li>
-@endpermiso
-
-            {{-- Cerrar sesión --}}
-            <li>
-                <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                    @csrf
-                    <button class="nav-link btn btn-link text-start text-white" style="padding-left:20px;">
-                        <i class="bi-truck"></i> Cerrar sesión
-                    </button>
-                </form>
-            </li>
         </ul>
     </nav>
 
-    {{-- ========= ÁREA PRINCIPAL ========= --}}
+    {{-- ===== ÁREA PRINCIPAL ===== --}}
     <div class="flex-grow-1">
 
-        {{-- -------- TOPBAR -------- --}}
+        {{-- --- TOPBAR --- --}}
         <div class="topbar">
             <button class="menu-toggle" onclick="toggleSidebar()">
                 <i class="bi bi-list"></i>
@@ -236,28 +287,43 @@
             </div>
         </div>
 
-        {{-- -------- CONTENIDO DINÁMICO -------- --}}
+        {{-- --- CONTENIDO DINÁMICO --- --}}
         <div class="main-content">
             @yield('content')
         </div>
     </div>
+
+    {{-- overlay para móviles --}}
+    <div class="overlay" onclick="toggleSidebar()"></div>
 </div>
 
- 
-
-{{-- Función toggle y fecha --}}
+{{-- ===== JS ===== --}}
 <script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('hidden');
+function toggleSidebar(){
+    const w = window.innerWidth;
+    const wrapper = document.getElementById('wrapper');
+
+    if (w >= 768){
+        document.body.classList.toggle('collapsed');
+    }else{
+        wrapper.classList.toggle('sidebar-open');
+    }
+}
+
+/* Fecha */
+document.getElementById('fechaActual').textContent =
+    new Date().toLocaleDateString('es-ES',{
+        weekday:'long',year:'numeric',month:'long',day:'numeric'
+    });
+
+/* Confirmación de cierre de sesión */
+   if (performance && performance.getEntriesByType) {
+        const nav = performance.getEntriesByType("navigation")[0];
+        if (nav && nav.type === "back_forward") {
+            location.reload(); // 🔁 Fuerza recarga real si se usó el botón atrás
+        }
     }
 
-    document.getElementById('fechaActual').textContent =
-        new Date().toLocaleDateString('es-ES', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

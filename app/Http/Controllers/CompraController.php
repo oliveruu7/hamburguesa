@@ -96,12 +96,13 @@ public function edit(Compra $compra)
     ]);
 }
 
- public function update(Request $request, Compra $compra)
+  public function update(Request $request, Compra $compra)
 {
     if ($compra->estado === 'Anulada') {
         return back()->with('info','No se puede editar una compra anulada.');
     }
 
+    /* -------- 1. validar -------- */
     $data = $request->validate([
         'idproveedor'            => 'required|exists:proveedor,idproveedor',
         'detalles'               => 'required|array|min:1',
@@ -112,65 +113,92 @@ public function edit(Compra $compra)
 
     DB::beginTransaction();
     try {
-        /* 1. Elimina detalles viejos ->
-              el trigger AFTER DELETE resta stock automáticamente */
-        $compra->detalles()->delete();
 
-        /* 2. Calcula total y actualiza encabezado */
-        $total = collect($data['detalles'])
-                 ->sum(fn($d)=>$d['cantidad']*$d['precio']);
+        /* -------- 2. Mapear detalles actuales -------- */
+        /** @var \Illuminate\Support\Collection $viejos */
+        $viejos = $compra->detalles->keyBy('iddetalle_compra_insumo');   // agrupa por PK
+        $usados = [];   // ids que seguiremos usando
 
+        /* -------- 3. Recorrer nuevos detalles -------- */
+        foreach ($data['detalles'] as $idx => $nuevo) {
+
+            // ¿Existe una fila con mismo índice visual? -> obtenemos su PK
+            $detalleViejo = $compra->detalles[$idx] ?? null;
+
+            if ($detalleViejo) {
+                // ---------- a) el detalle ya existía ----------
+                $usados[] = $detalleViejo->iddetalle_compra_insumo;
+
+                // a1) si cambió de insumo, revertir viejo y sumar nuevo
+                if ($detalleViejo->idinsumo != $nuevo['idinsumo']) {
+                    $detalleViejo->insumo()->decrement('stock_actual', $detalleViejo->cantidad);
+                    Insumo::where('idinsumo', $nuevo['idinsumo'])
+                          ->increment('stock_actual', $nuevo['cantidad']);
+                } else {
+                    // a2) mismo insumo, ajustar por diferencia de cantidad
+                    $delta = $nuevo['cantidad'] - $detalleViejo->cantidad;
+                    if ($delta != 0) {
+                        $detalleViejo->insumo()->increment('stock_actual', $delta);
+                    }
+                }
+
+                // a3) actualizar fila detalle
+                $detalleViejo->update([
+                    'idinsumo' => $nuevo['idinsumo'],
+                    'cantidad' => $nuevo['cantidad'],
+                    'precio'   => $nuevo['precio'],
+                ]);
+
+            } else {
+                // ---------- b) detalle completamente nuevo ----------
+                $nuevoDet = DetalleCompraInsumo::create([
+                    'idcompra' => $compra->idcompra,
+                    'idinsumo' => $nuevo['idinsumo'],
+                    'cantidad' => $nuevo['cantidad'],
+                    'precio'   => $nuevo['precio'],
+                ]);
+                $usados[] = $nuevoDet->iddetalle_compra_insumo;
+
+                // sumar al stock
+                $nuevoDet->insumo()->increment('stock_actual', $nuevo['cantidad']);
+            }
+        }
+
+        /* -------- 4. Eliminar detalles que ya no existen -------- */
+        $paraBorrar = $compra->detalles()
+                             ->whereNotIn('iddetalle_compra_insumo', $usados)
+                             ->get();
+
+        foreach ($paraBorrar as $det) {
+            $det->insumo()->decrement('stock_actual', $det->cantidad);
+            $det->delete();
+        }
+
+        /* -------- 5. Recalcular total -------- */
+        $total = $compra->detalles()->sum(DB::raw('cantidad * precio'));
+
+        /* -------- 6. Detectar “sin cambios” -------- */
+        $sinCambiosProveedor = $compra->idproveedor == $data['idproveedor'];
+        $sinCambiosTotal     = bccomp($total, $compra->total, 2) == 0;
+        if ($sinCambiosProveedor && $paraBorrar->isEmpty() && empty(array_diff($compra->detalles->pluck('iddetalle_compra_insumo')->toArray(), $usados)) && $sinCambiosTotal) {
+            DB::rollBack();
+            return back()->with('info', 'No se realizaron cambios.');
+        }
+
+        /* -------- 7. Actualizar cabecera -------- */
         $compra->update([
             'idproveedor' => $data['idproveedor'],
             'total'       => $total,
             'fecha'       => now(),
         ]);
 
-        /* 3. Inserta nuevos detalles ->
-              el trigger AFTER INSERT suma stock automáticamente */
-        foreach ($data['detalles'] as $d) {
-            DetalleCompraInsumo::create([
-                'idcompra' => $compra->idcompra,
-                'idinsumo' => $d['idinsumo'],
-                'cantidad' => $d['cantidad'],
-                'precio'   => $d['precio'],
-            ]);
-        }
-
         DB::commit();
-        return redirect()->route('compras.index')
-                         ->with('success','Compra actualizada.');
+        return redirect()->route('compras.index')->with('success','Compra actualizada correctamente.');
+
     } catch (\Throwable $e) {
         DB::rollBack();
         return back()->with('error','Error: '.$e->getMessage())->withInput();
     }
 }
 
-
-    /*Eliminar compra y sus detalles */
-    public function destroy(Compra $compra)
-{
-    if ($compra->estado === 'Anulada') {
-        return back()->with('info', 'La compra ya está anulada.');
-    }
-
-    DB::beginTransaction();
-    try {
-        /** @var DetalleCompraInsumo $detalle */
-        foreach ($compra->detalles as $detalle) {
-            // Restar del stock lo que había sumado esa compra
-            $detalle->insumo()->update([
-                'stock_actual' => DB::raw('GREATEST(0, stock_actual - '.$detalle->cantidad.')')
-            ]);
-        }
-
-        $compra->update(['estado' => 'Anulada']);
-
-        DB::commit();
-        return back()->with('success', 'Compra anulada y stock revertido.');
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        return back()->with('error', 'Error al anular: '.$e->getMessage());
-    }
-}
 }

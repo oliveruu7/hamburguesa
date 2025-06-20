@@ -1,4 +1,4 @@
- @extends('layouts.admin')
+@extends('layouts.admin')
 @section('title','Registrar Venta')
 
 @section('content')
@@ -9,11 +9,11 @@
 
     {{-- ===== Cliente ===== --}}
     <div class="card shadow border-0 mb-4">
-      <div class="card-header text-white" style="background:#008080">
+      <div class="card-header text-white" style="background:#2e8b57">
         <h5 class="mb-0"><i class="bi bi-person-fill me-2"></i> Datos del Cliente</h5>
       </div>
       <div class="card-body">
-        <label class="form-label fw-bold" style="color:#008080">Cliente *</label>
+        <label class="form-label fw-bold" style="color:#000000">Cliente *</label>
         <select name="idcliente" class="form-select" required>
           <option value="">Seleccione…</option>
           @foreach($clientes as $c)
@@ -25,7 +25,7 @@
 
     {{-- ===== Detalle ===== --}}
     <div class="card shadow border-0 mb-4">
-      <div class="card-header text-white d-flex justify-content-between" style="background:#008080">
+      <div class="card-header text-white d-flex justify-content-between" style="background:#2e8b57">
         <span><i class="bi bi-box-seam me-2"></i> Productos</span>
         <button type="button" class="btn btn-light btn-sm fw-bold" onclick="agregarFila()">+</button>
       </div>

@@ -5,7 +5,7 @@
 <div class="container py-4">
     {{-- === Encabezado + botón === --}}
     <div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
-        <h3 class="text-primary">
+        <h3 class="fw-bold" style="color:#008080">
             <i class="bi bi-people-fill me-2"></i> Lista de Clientes
         </h3>
         @permiso('clientes.create')

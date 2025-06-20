@@ -20,12 +20,20 @@
     </div>
   @endif
 
+ @if(session('info'))
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <i class="bi bi-info-circle-fill me-2"></i> {{ session('info') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+@endif
+
+
   <form action="{{ route('roles.update',$rol->idrol) }}" method="POST">
     @csrf @method('PUT')
 
     {{-- ───────── DATOS BÁSICOS ───────── --}}
     <div class="card shadow border-0 mb-4">
-      <div class="card-header" style="background:#6f42c1;color:#fff">
+      <div class="card-header" style="background:#f39c12;color:#fff">
         <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Editar Rol</h5>
       </div>
 
@@ -98,7 +106,7 @@
     </div>
 
     {{-- ───────── BOTONES ───────── --}}
-    <button class="btn text-white" style="background:#6f42c1">
+    <button class="btn text-white" style="background:#2471a3">
         <i class="bi bi-save2"></i> Actualizar
     </button>
     <a href="{{ route('roles.index') }}" class="btn btn-secondary">Cancelar</a>

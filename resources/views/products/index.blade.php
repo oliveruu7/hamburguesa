@@ -7,8 +7,8 @@
     {{-- Encabezado --}}
     <div class="row align-items-center mb-4">
         <div class="col-md-6">
-            <h2 class="fw-bold text-dark">
-                <i class="bi bi-box-seam me-2 text-primary"></i> Productos registrados
+            <h2 class="fw-bold" style="color:#008080">
+                <i class="bi bi-box-seam me-2 "></i> Productos registrados
             </h2>
         </div>
         <div class="col-md-6 text-md-end">

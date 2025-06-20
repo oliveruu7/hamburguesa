@@ -78,10 +78,11 @@ class UserController extends Controller
        -----------------------------------------------------------------*/
     public function edit($id)
     {
-        $usuario = Usuario::findOrFail($id);
-        $roles   = RolUsuario::all();
+       $usuario = Usuario::findOrFail($id);
+       $roles   = RolUsuario::all();
+       $bloquearRol = $usuario->idrol == 1; // ← 1 = administrador
 
-        return view('usuarios.edit', compact('usuario', 'roles'));
+    return view('usuarios.edit', compact('usuario', 'roles', 'bloquearRol'));
     }
 
     public function update(Request $request, $id)
@@ -112,14 +113,20 @@ class UserController extends Controller
        -----------------------------------------------------------------*/
     public function destroy($id)
     {
-        if ($id == Auth::id()) {
-            return back()->with('error', 'No puedes eliminar tu propia cuenta.');
-        }
-        $usuario         = Usuario::findOrFail($id);
-        $usuario->estado = 0;                 // pasa a inactivo
-        $usuario->save();
+    $usuario = Usuario::findOrFail($id);
 
-        return back()->with('success', 'Usuario desactivado correctamente.');
+    if ($id == Auth::id()) {
+        return back()->with('error', 'No puedes eliminar tu propia cuenta.');
+    }
+
+    if ($usuario->idrol == 1) {
+        return back()->with('error', 'No está permitido eliminar a un administrador.');
+    }
+
+    $usuario->estado = 0;
+    $usuario->save();
+
+    return back()->with('success', 'Usuario desactivado correctamente.');
     }
 
     /* ------------------------------------------------------------------

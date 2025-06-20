@@ -1,6 +1,5 @@
 <?php
  
-
  namespace App\Http\Controllers;
  
  use App\Models\RolUsuario;
@@ -36,20 +35,27 @@
      }
  
      /* ===== GUARDAR ===== */
-     public function store(Request $r)
-     {
-         $this->validar($r);
- 
-         $rol = RolUsuario::create($r->only('nombre','descripcion') + ['estado'=>1]);
- 
-         $ids = $r->full_access === 'yes'
-                  ? Permiso::pluck('idpermiso')->all()
-                  : ($r->permisos ?? []);
- 
-         $rol->syncPermisos($ids);
- 
-         return redirect()->route('roles.index')->with('success','Rol creado.');
-     }
+public function store(Request $r)
+{
+    $this->validar($r);
+
+    $ids = $r->full_access === 'yes'
+        ? Permiso::pluck('idpermiso')->all()
+        : ($r->permisos ?? []);
+
+    // ❌ Si no se asignó ningún permiso
+    if (empty($ids)) {
+        return back()
+            ->withInput()
+            ->with('error', 'Debes seleccionar al menos un permiso.');
+    }
+
+    $rol = RolUsuario::create($r->only('nombre','descripcion') + ['estado'=>1]);
+    $rol->syncPermisos($ids);
+
+    return redirect()->route('roles.index')->with('success','Rol creado.');
+}
+
  
      /* ===== FORM EDITAR ===== */
      public function edit($id)
@@ -60,50 +66,67 @@
          ]);
      }
  
-     public function update(Request $r, $id)
+        /* ===== ACTUALIZAR ===== */
+        public function update(Request $r, $id)
 {
-    $rol = RolUsuario::with('usuarios')->findOrFail($id);
+    $rol = RolUsuario::with(['usuarios', 'permisos'])->findOrFail($id);
     $this->validar($r, $id);
 
     $usuarioActual = auth()->user();
 
-    // Obtener los nuevos permisos asignados
+    /* ---------- Permisos enviados ---------- */
     $ids = $r->full_access === 'yes'
         ? Permiso::pluck('idpermiso')->all()
-        : ($r->permisos ?? []);
+        : ($r->permisos ?? []);                 // array vacía si ningún checkbox
 
-    // ❌ Evitar rol sin permisos
+    /* ---------- 1. No se permite dejar el rol sin permisos ---------- */
     if (empty($ids)) {
         return back()->with('error', 'Debes asignar al menos un permiso.');
     }
 
-    // ❌ No dejar quitar el permiso de roles al propio rol
+    /* ---------- 2. Proteger «Administrador» contra pérdida de permisos ---------- */
+    $esAdmin = in_array(strtolower($rol->nombre), ['admin', 'administrador']);
+    if ($esAdmin) {
+        $permisosOriginales = $rol->permisos->pluck('idpermiso')->toArray();
+        $perdidos = array_diff($permisosOriginales, $ids);   // los que intenta quitar
+
+        if (!empty($perdidos)) {
+            return back()->with('error',
+                'No puedes quitar permisos existentes al rol Administrador; solo es permitido añadir nuevos.');
+        }
+    }
+
+    /* ---------- 3. Protección extra: no quitar tu propio permiso de roles ---------- */
     $permisoRolesID = Permiso::where('nombre', 'roles.index')->value('idpermiso');
     if ($usuarioActual->idrol === $rol->idrol && !in_array($permisoRolesID, $ids)) {
-        return back()->with('error', 'No puedes quitar el permiso del módulo de roles a tu propio rol.');
+        return back()->with('error',
+            'No puedes quitar el permiso del módulo de roles a tu propio rol.');
     }
 
-    // ❌ No dejar su propio rol sin permisos
-    if ($usuarioActual->idrol === $rol->idrol && $r->full_access !== 'yes' && empty($r->permisos)) {
-        return back()->with('error', 'No puedes dejar tu propio rol sin permisos mientras estás logueado.');
-    }
+    
+/* ---------- 4. Verificar si realmente hay cambios ---------- */
+$nombreIgual      = trim($r->nombre)      === trim($rol->nombre);
+$descripcionIgual = trim($r->descripcion) === trim($rol->descripcion);
 
-    // ❌ Proteger rol Administrador (opcional)
-    $esAdmin = strtolower($rol->nombre) === 'admin' || strtolower($rol->nombre) === 'administrador';
-    if ($esAdmin && $r->full_access !== 'yes' && count($ids) < 3) {
-        return back()->with('error', 'El rol Administrador debe mantener permisos esenciales.');
-    }
+$permisosActuales = $rol->permisos->pluck('idpermiso')->toArray();
+sort($permisosActuales);          // ordena
+$idsOrdenados = $ids;             // $ids viene de la petición
+sort($idsOrdenados);
 
-    // ❌ Si el rol tiene usuarios, debe conservar al menos 2 permisos
-    if ($rol->usuarios->count() > 0 && count($ids) < 2) {
-        return back()->with('error', 'Este rol tiene usuarios asignados. No puede tener menos de 2 permisos.');
-    }
+$sinCambiosPermisos = ($permisosActuales === $idsOrdenados);
 
-    // ✅ Actualizar y guardar
+if ($nombreIgual && $descripcionIgual && $sinCambiosPermisos) {
+    return back()->with('info', 'No se realizaron cambios.');
+}
+
+
+    /* ---------- 5. Actualizar ---------- */
     $rol->update($r->only('nombre', 'descripcion'));
     $rol->syncPermisos($ids);
 
-    return redirect()->route('roles.index')->with('success', 'Rol actualizado.');
+    return redirect()
+           ->route('roles.index')
+           ->with('success', 'Rol actualizado correctamente.');
 }
 
  
@@ -134,7 +157,7 @@
        ], [
       'nombre.required' => 'El nombre del rol es obligatorio.',
       'nombre.min' => 'El nombre del rol debe tener al menos 3 caracteres.',
-      'nombre.max' => 'El nombre del rol no debe exceder los 30 caracteres.',
+      'nombre.max' => 'El nombre del rol no debe exceder los 15 caracteres.',
       'nombre.unique' => 'Ya existe un rol con ese nombre.',
       'descripcion.max' => 'La descripción no debe exceder los 100 caracteres.',
    ]);

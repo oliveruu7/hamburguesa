@@ -1,4 +1,4 @@
-{{-- resources/views/usuarios/index.blade.php --}}
+ {{-- resources/views/usuarios/index.blade.php --}}
 @extends('layouts.admin')
 @section('title','Usuarios')
 
@@ -7,7 +7,7 @@
 
     {{-- ===== Encabezado + botón ===== --}}
     <div class="d-flex justify-content-between flex-wrap align-items-center mb-3">
-        <h3 class="text-primary">
+        <h3 class="fw-bold" style="color:#008080">
             <i class="bi bi-people-fill me-2"></i> Lista de Usuarios
         </h3>
         <a href="{{ route('usuarios.create') }}" class="btn btn-success shadow-sm">
@@ -55,6 +55,13 @@
             </thead>
             <tbody class="text-center">
             @forelse($usuarios as $usuario)
+                @php
+                    $esPropio     = $usuario->idusuario == Auth::id();
+                    $noEliminable = $esPropio || $usuario->idrol == 1;   // regla central
+                    $msgBloqueo   = $esPropio
+                                    ? 'No puedes eliminar tu propia cuenta'
+                                    : 'No está permitido eliminar a un administrador';
+                @endphp
                 <tr>
                     <td>{{ $usuario->idusuario }}</td>
                     <td class="fw-semibold">{{ $usuario->nombre }}</td>
@@ -72,7 +79,7 @@
                     </td>
                     <td>{{ $usuario->rol->nombre }}</td>
 
-                    {{-- Acciones --}}
+                    {{-- ===== Acciones ===== --}}
                     <td>
                         <div class="btn-group">
                             <a href="{{ route('usuarios.show',$usuario) }}"
@@ -83,22 +90,24 @@
                                class="btn btn-sm btn-outline-warning" title="Editar">
                                <i class="bi bi-pencil-fill"></i></a>
 
-                            @php $esPropio = $usuario->idusuario == Auth::id(); @endphp
-                             <form id="form-delete-{{ $usuario->idusuario }}"
-      action="{{ route('usuarios.destroy',$usuario) }}"
-      method="POST" style="display:inline;">
-    @csrf
-    @method('DELETE')
+                            {{-- FORM ELIMINAR / INACTIVAR --}}
+                            <form id="form-delete-{{ $usuario->idusuario }}"
+                                  action="{{ route('usuarios.destroy',$usuario) }}"
+                                  method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
 
-    <button type="button"
-            onclick="confirmarEliminacion({{ $usuario->idusuario }})"
-            class="btn btn-sm btn-outline-danger"
-            title="{{ $esPropio ? 'No puedes eliminar tu propia cuenta' : 'Inactivar' }}"
-            {{ $esPropio ? 'disabled' : '' }}>
-        <i class="bi bi-trash-fill"></i>
-    </button>
-</form>
-
+                                <button type="button"
+                                        onclick="confirmarEliminacion(
+                                            {{ $usuario->idusuario }},
+                                            {{ $noEliminable ? 'false' : 'true' }},
+                                            '{{ $noEliminable ? $msgBloqueo : 'Este usuario será desactivado.' }}'
+                                        )"
+                                        class="btn btn-sm btn-outline-danger"
+                                        title="{{ $noEliminable ? $msgBloqueo : 'Inactivar' }}">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>
@@ -117,12 +126,23 @@
 @endsection
 
 @push('js')
- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function confirmarEliminacion(id) {
+/* ---------- Confirmar eliminación (bloqueo o ejecución) ---------- */
+function confirmarEliminacion(id, permitido, mensaje) {
+    if (!permitido) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Acción no permitida',
+            text: mensaje,
+            confirmButtonText: 'Entendido',
+        });
+        return;
+    }
+
     Swal.fire({
         title: '¿Estás seguro?',
-        text: "Este usuario será desactivado.",
+        text: mensaje,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e3342f',
@@ -135,18 +155,15 @@ function confirmarEliminacion(id) {
         }
     });
 }
-  /* Validar buscador */
-    function validarInput(){
-        const v=document.getElementById('buscar').value;
-        if(!/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9@._\- ]{0,25}$/.test(v)){
-            alert('Sólo letras, números, puntos y @ (máx 25).');return false;
-        }
-        return true;
-    }
 
+/* ---------- Validar buscador ---------- */
+function validarInput(){
+    const v = document.getElementById('buscar').value;
+    if(!/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9@._\- ]{0,25}$/.test(v)){
+        alert('Sólo letras, números, puntos y @ (máx 25).');
+        return false;
+    }
+    return true;
+}
 </script>
 @endpush
-
-
-
- 

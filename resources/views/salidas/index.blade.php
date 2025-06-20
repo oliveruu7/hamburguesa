@@ -7,7 +7,7 @@
   {{-- Encabezado + botón --}}
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold" style="color:#008080">
-      <i class="bi bi-box-arrow-up me-2"></i> Salidas registradas
+      <i class="bi bi-box-arrow-up me-2"></i> Salidas registradas de Almacén
     </h2>
     @permiso('salidas.create')
       <a href="{{ route('salidas.create') }}" class="btn text-white" style="background:#008080">

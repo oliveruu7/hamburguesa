@@ -30,7 +30,7 @@
 
   {{-- === FORMULARIO === --}}
   <div class="card shadow border-0">
-    <div class="card-header text-white" style="background:#00bcd4;">
+    <div class="card-header text-white" style="background:#2e8b57;">
       <h5 class="mb-0"><i class="bi bi-plus-circle-fill me-2"></i> Crear nuevo producto</h5>
     </div>
 

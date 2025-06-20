@@ -12,10 +12,12 @@ class SaleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(Perm::class . ':sales.index' )->only('index');
-        $this->middleware(Perm::class . ':sales.create')->only(['create','store']);
-        $this->middleware(Perm::class . ':sales.delete')->only('destroy');
+      $this->middleware(Perm::class.':sales.index' ) ->only('index');
+      $this->middleware(Perm::class.':sales.create')->only(['create','store']);
+      $this->middleware(Perm::class.':sales.edit'  )->only(['edit','update']);    
+      $this->middleware(Perm::class.':sales.delete')->only('destroy');
     }
+
 
     /* ===== LISTAR ===== */
     public function index()
@@ -37,26 +39,21 @@ class SaleController extends Controller
     }
 
     /* ===== GUARDAR ===== */
-    public function store(Request $request)
-    {
-        $items = $request->input('productos', []);
+public function store(Request $request)
+{
+    $request->validate([
+        'idcliente'                   => ['required','exists:cliente,idcliente'],
+        'productos'                   => ['required','array','min:1'],
+        'productos.*.idhamburguesa'   => ['required','exists:hamburguesa,idhamburguesa'],
+        'productos.*.cantidad'        => ['required','integer','min:1'],
+        'productos.*.precio_unitario' => ['required','numeric','min:0'],
+    ]);
 
-        /* Validaciones básicas */
-        if (!$items) {
-            return back()->withInput()->with('error','Debe agregar al menos un producto.');
-        }
+    try {
+        DB::transaction(function () use ($request) {
 
-        foreach ($items as $i => $it) {
-            if (!isset($it['idhamburguesa'],$it['cantidad'],$it['precio_unitario'])) {
-                return back()->withInput()->with('error',"Fila #".($i+1)." incompleta.");
-            }
-            if ($it['cantidad'] < 1)
-                return back()->withInput()->with('error',"Cantidad inválida en fila #".($i+1).".");
-        }
-
-        DB::beginTransaction();
-        try {
-            $total = collect($items)->sum(fn($it)=>$it['cantidad']*$it['precio_unitario']);
+            $total = collect($request->productos)
+                     ->sum(fn($p) => $p['cantidad'] * $p['precio_unitario']);
 
             $venta = Venta::create([
                 'idcliente' => $request->idcliente,
@@ -66,25 +63,33 @@ class SaleController extends Controller
                 'estado'    => 1,
             ]);
 
-            foreach ($items as $it) {
+            foreach ($request->productos as $p) {
                 DetalleVenta::create([
                     'idventa'        => $venta->idventa,
-                    'idhamburguesa'  => $it['idhamburguesa'],
-                    'cantidad'       => $it['cantidad'],
-                    'precio_unitario'=> $it['precio_unitario'],
-                    'subtotal'       => $it['cantidad']*$it['precio_unitario'],
+                    'idhamburguesa'  => $p['idhamburguesa'],
+                    'cantidad'       => $p['cantidad'],
+                    'precio_unitario'=> $p['precio_unitario'],
+                    'subtotal'       => $p['cantidad'] * $p['precio_unitario'],
                 ]);
             }
+        });
 
-            DB::commit();
-            return redirect()->route('sales.index')
-                             ->with('success','Venta registrada correctamente.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withInput()
-                         ->with('error','Error al registrar la venta: '.$e->getMessage());
+        return redirect()->route('sales.index')
+                         ->with('success','Venta registrada correctamente.');
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Trigger 1644 => stock insuficiente
+        if ($e->errorInfo[1] == 1644) {
+            return back()->withInput()->with('error', $e->errorInfo[2]);
         }
+        return back()->withInput()->with('error', 'Error SQL: '.$e->getMessage());
+    } catch (\Throwable $e) {
+        return back()->withInput()->with('error', 'Error: '.$e->getMessage());
     }
+}
+
+
+
 
     /* ===== DETALLE ===== */
     public function show(Venta $sale)   // Route-model binding usa parámetro 'sale'

@@ -8,14 +8,15 @@
     <i class="bi bi-pencil-square me-1"></i> Editar Compra #{{ $compra->idcompra }}
   </h3>
 
-  {{-- Alertas --}}
-  @foreach (['success','error','info'] as $t)
-      @if(session($t))
-          <div class="alert alert-{{ $t=='success'?'success':($t=='error'?'danger':'warning') }}">
-              {{ session($t) }}
-          </div>
-      @endif
-  @endforeach
+
+
+  @if(session('info'))
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <i class="bi bi-info-circle-fill me-2"></i> {{ session('info') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+@endif
+
 
   <form id="formCompra" action="{{ route('compras.update',$compra) }}" method="POST">
       @csrf @method('PUT')
@@ -95,7 +96,7 @@
           <a href="{{ route('compras.index') }}" class="btn btn-secondary">
               <i class="bi bi-arrow-left"></i> Volver
           </a>
-          <button class="btn text-white" style="background:#008080">
+          <button class="btn btn-primary px-4 ">
               <i class="bi bi-save me-1"></i> Guardar cambios
           </button>
       </div>

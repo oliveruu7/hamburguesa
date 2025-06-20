@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use App\Models\Product;
 class DetalleVenta extends Model
 {
     protected $table      = 'detalle_venta';
@@ -17,4 +17,5 @@ class DetalleVenta extends Model
 
     public function venta():       BelongsTo { return $this->belongsTo(Venta::class,'idventa'); }
     public function hamburguesa(): BelongsTo { return $this->belongsTo(Hamburguesa::class,'idhamburguesa'); }
+    
 }

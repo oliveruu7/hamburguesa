@@ -19,19 +19,23 @@
     @endforeach
 
     {{-- ===== Errores de validación del servidor ===== --}}
-    @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i>
+   @if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+        <div>
             <ul class="mb-0">
-                @foreach ($errors->all() as $err)<li>{{ $err }}</li>@endforeach
+                @foreach ($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
             </ul>
-            <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+        <button class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+@endif
 
     {{-- ===== Tarjeta ===== --}}
     <div class="card shadow border-0">
-        <div class="card-header text-white" style="background:#00bcd4;">
+        <div class="card-header text-white" style="background:#f39c12;">
             <h5 class="mb-0"><i class="bi bi-pencil-fill me-2"></i> Editar usuario</h5>
         </div>
 
@@ -104,21 +108,32 @@
                     </div>
 
                     {{-- ---------- ROL ---------- --}}
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">
-                            <i class="bi bi-person-gear"></i> Rol <span class="text-danger">*</span>
-                        </label>
-                        <select name="idrol" class="form-select" required>
-                            <option value="" disabled>Seleccione un rol…</option>
-                            @foreach($roles as $rol)
-                                <option value="{{ $rol->idrol }}"
-                                    {{ old('idrol',$usuario->idrol)==$rol->idrol?'selected':'' }}>
-                                    {{ $rol->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div class="invalid-feedback">Seleccione un rol válido.</div>
-                    </div>
+<div class="col-md-6">
+    <label class="form-label fw-semibold">
+        <i class="bi bi-person-gear"></i> Rol <span class="text-danger">*</span>
+    </label>
+
+    {{-- si el rol está bloqueado, el select queda disabled  --}}
+    <select name="idrol"
+            class="form-select"
+            {{ $bloquearRol ? 'disabled' : 'required' }}>
+        <option value="" disabled>Seleccione un rol…</option>
+        @foreach($roles as $rol)
+            <option value="{{ $rol->idrol }}"
+                {{ old('idrol',$usuario->idrol)==$rol->idrol?'selected':'' }}>
+                {{ $rol->nombre }}
+            </option>
+        @endforeach
+    </select>
+
+    {{--  🔑 Campo oculto para que el valor SÍ viaje al servidor  --}}
+    @if($bloquearRol)
+        <input type="hidden" name="idrol" value="{{ $usuario->idrol }}">
+    @endif
+
+    <div class="invalid-feedback">Seleccione un rol válido.</div>
+</div>
+
                 </div>
 
                 {{-- ---------- BOTONES ---------- --}}

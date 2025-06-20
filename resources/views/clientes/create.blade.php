@@ -18,7 +18,7 @@
   @endif
 
   <div class="card shadow border-0">
-    <div class="card-header text-white" style="background-color:#008080;">
+    <div class="card-header text-white" style="background-color:#2e8b57;">
       <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i> Registrar nuevo cliente</h5>
     </div>
 

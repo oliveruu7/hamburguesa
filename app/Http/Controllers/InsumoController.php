@@ -88,13 +88,31 @@ class InsumoController extends Controller
     }
 
     /* ===== VALIDAR ===== */
-    private function validar(Request $request, $id = null): array
-    {
-        return $request->validate([
-            'nombre'       => ['required','string','max:50',
-                               'unique:insumo,nombre' . ($id ? ",$id,idinsumo" : '')],
-            'unidad'       => 'required|string|max:20',
-            'descripcion'  => 'nullable|string|max:255',
-        ]);
-    }
+    /* ===== VALIDAR ===== */
+private function validar(Request $request, $id = null): array
+{
+    /* -------- Reglas -------- */
+    $rules = [
+        'nombre'      => [
+            'required','string','max:50',
+            // único (ignora al propio registro en update)
+            'unique:insumo,nombre' . ($id ? ",$id,idinsumo" : '')
+        ],
+        'unidad'      => 'required|string|max:20',
+        'descripcion' => 'nullable|string|max:255',
+    ];
+
+    /* -------- Mensajes -------- */
+    $messages = [
+        'nombre.required' => 'El nombre es obligatorio.',
+        'nombre.max'      => 'El nombre no debe superar 50 caracteres.',
+        'nombre.unique'   => 'Ya existe un insumo con ese nombre.',   // 👈 aquí tu mensaje
+        'unidad.required' => 'La unidad es obligatoria.',
+        'unidad.max'      => 'La unidad no debe superar 20 caracteres.',
+        'descripcion.max' => 'La descripción no debe superar 255 caracteres.',
+    ];
+
+    return $request->validate($rules, $messages);
+}
+
 }

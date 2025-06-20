@@ -124,6 +124,20 @@
         }
     </style>
 </head>
+<script>
+/*  Bloqueo suave de la flecha Atrás:
+    - Empuja un estado “fantasma” al historial
+    - Si el usuario intenta retroceder, volvemos a empujarlo,
+      de modo que permanece en /login
+*/
+// Esto bloquea navegación hacia atrás una vez en /login
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', () => {
+    history.pushState(null, '', location.href);
+});
+
+</script>
+
 <body>
 
 <div class="login-card">
@@ -200,6 +214,8 @@
         const alert = document.querySelector('.alert');
         if (alert) alert.remove();
     }, 6000);
+
+    
 </script>
 
 </body>

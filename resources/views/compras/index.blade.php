@@ -1,31 +1,30 @@
-@extends('layouts.admin')
+ @extends('layouts.admin')
 @section('title', 'Compras')
 
 @section('content')
 <div class="container py-4">
 
-  {{-- ===== Encabezado + botón ===== --}}
+  {{-- ===== Encabezado y botón ===== --}}
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0" style="color:#008080">
+    <h3 class="fw-bold" style="color:#008080">
       <i class="bi bi-cart-check me-2"></i> Lista de Compras
     </h3>
-
     @permiso('compras.create')
-      <a href="{{ route('compras.create') }}" class="btn text-white shadow-sm"
-         style="background:#008080">
+      <a href="{{ route('compras.create') }}" class="btn btn-success shadow-sm">
         <i class="bi bi-plus-circle me-1"></i> Nueva compra
       </a>
     @endpermiso
   </div>
 
   {{-- ===== Alertas de sesión ===== --}}
-  @foreach (['success'=>'success','error'=>'danger','info'=>'info'] as $key => $color)
-      @if(session($key))
-        <div class="alert alert-{{ $color }} alert-dismissible fade show" role="alert">
-          {{ session($key) }}
-          <button class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      @endif
+  @foreach (['success' => 'success', 'error' => 'danger', 'info' => 'info'] as $tipo => $clase)
+    @if(session($tipo))
+      <div class="alert alert-{{ $clase }} alert-dismissible fade show" role="alert">
+        <i class="bi bi-{{ $clase == 'success' ? 'check' : ($clase == 'danger' ? 'x-circle' : 'info-circle') }}-fill me-2"></i>
+        {{ session($tipo) }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    @endif
   @endforeach
 
   {{-- ===== Tabla ===== --}}
@@ -39,7 +38,7 @@
           <th>Fecha</th>
           <th>Total (Bs)</th>
           <th>Estado</th>
-          <th>Acciones</th>
+          
         </tr>
       </thead>
       <tbody>
@@ -48,44 +47,55 @@
             <td>{{ $c->idcompra }}</td>
             <td class="text-start">{{ $c->proveedor->nombre }}</td>
             <td>{{ $c->usuario->nombre }}</td>
-            <td>{{ $c->fecha }}</td>
-            <td class="fw-bold">{{ number_format($c->total,2) }}</td>
+            <td>{{ \Carbon\Carbon::parse($c->fecha)->format('d/m/Y H:i') }}</td>
+            <td class="fw-bold">{{ number_format($c->total, 2, ',', '.') }}</td>
             <td>
-              <span class="badge {{ $c->estado=='Registrada' ? 'bg-success' : 'bg-danger' }}">
+              <span class="badge {{ $c->estado === 'Registrada' ? 'bg-success' : 'bg-danger' }}">
                 {{ $c->estado }}
               </span>
             </td>
-            <td>
-              <div class="btn-group">
-                @permiso('compras.edit')
-                  <a href="{{ route('compras.edit',$c) }}" class="btn btn-sm text-white"
-                     style="background:#008080" title="Editar">
-                     <i class="bi bi-pencil-fill"></i>
-                  </a>
-                @endpermiso
-
-                @permiso('compras.delete')
-                  <form action="{{ route('compras.destroy',$c) }}" method="POST"
-                        onsubmit="return confirm('¿Anular compra?')" class="d-inline">
-                    @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-outline-danger" title="Anular">
-                      <i class="bi bi-trash-fill"></i>
-                    </button>
-                  </form>
-                @endpermiso
-              </div>
-            </td>
+             
           </tr>
         @empty
-          <tr><td colspan="7" class="text-muted">No hay compras registradas.</td></tr>
+          <tr><td colspan="7" class="text-muted py-4">No hay compras registradas.</td></tr>
         @endforelse
       </tbody>
     </table>
   </div>
 
-  {{-- ===== Paginación ===== --}}
-  <div class="d-flex justify-content-center mt-3">
-    {{ $compras->links() }}
-  </div>
+  {{-- ===== Paginación en español ===== --}}
+  @if ($compras->hasPages())
+    <div class="d-flex justify-content-center mt-4">
+      <nav>
+        <ul class="pagination">
+          {{-- Anterior --}}
+          @if ($compras->onFirstPage())
+            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+          @else
+            <li class="page-item">
+              <a class="page-link" href="{{ $compras->previousPageUrl() }}">Anterior</a>
+            </li>
+          @endif
+
+          {{-- Números --}}
+          @foreach ($compras->getUrlRange(1, $compras->lastPage()) as $page => $url)
+            <li class="page-item {{ $page == $compras->currentPage() ? 'active' : '' }}">
+              <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+            </li>
+          @endforeach
+
+          {{-- Siguiente --}}
+          @if ($compras->hasMorePages())
+            <li class="page-item">
+              <a class="page-link" href="{{ $compras->nextPageUrl() }}">Siguiente</a>
+            </li>
+          @else
+            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+          @endif
+        </ul>
+      </nav>
+    </div>
+  @endif
+
 </div>
 @endsection

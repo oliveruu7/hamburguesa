@@ -17,7 +17,7 @@
 
   {{-- Formulario --}}
   <div class="card shadow border-0">
-    <div class="card-header text-white" style="background:#00bcd4;">
+    <div class="card-header text-white" style="background:#f39c12;">
       <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Editar insumo</h5>
     </div>
 

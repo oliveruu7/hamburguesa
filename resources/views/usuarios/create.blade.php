@@ -16,20 +16,25 @@
         @endif
     @endforeach
 
-    {{-- ===== Errores de validación del servidor (correo duplicado, etc.) ===== --}}
-    @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i>
+ {{-- ===== Errores de validación del servidor (correo duplicado, etc.) ===== --}}
+@if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+        <div>
             <ul class="mb-0">
-                @foreach ($errors->all() as $err) <li>{{ $err }}</li> @endforeach
+                @foreach ($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
             </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-    @endif
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+@endif
+
 
     {{-- ===== Formulario ===== --}}
     <div class="card shadow border-0">
-        <div class="card-header text-white" style="background:#00bcd4;">
+        <div class="card-header text-white" style="background:#2e8b57;">
             <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i> Crear nuevo usuario</h5>
         </div>
 

@@ -60,8 +60,8 @@
                 </span>
               </td>
               <td>
-                <a href="{{ route('sales.show',$v) }}" class="btn btn-sm text-white"
-                   style="background:#008080" title="Ver detalle">
+                <a href="{{ route('sales.show',$v) }}" class="btn btn-sm btn-outline-primary"
+                    title="Ver detalle">
                   <i class="bi bi-eye-fill"></i>
                 </a>
                 @permiso('sales.edit')

@@ -12,6 +12,8 @@ use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\RecetaController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\SalidaController;
+use App\Http\Controllers\DashboardController; 
+use App\Http\Controllers\ProveedorController;
 
 /* ---------- LOGIN ---------- */
 Route::get('/', fn () => redirect()->route('login'));
@@ -23,9 +25,19 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 /* ---------- ÁREA PROTEGIDA ---------- */
 Route::middleware('auth')->group(function () {
 
-    Route::get('/admin', fn () => view('layouts.admin'))
-        ->name('admin')
-        ->middleware(CheckPermission::class . ':main.menu.view');
+    // Panel principal (HTML)
+    Route::get('/admin', [DashboardController::class, 'index'])
+         ->name('admin')
+         ->middleware(CheckPermission::class.':main.menu.view');
+
+    // End-points en JSON que consumirá el JS
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/metrics', [DashboardController::class, 'metrics'])
+             ->name('dashboard.metrics');   // /dashboard/metrics
+        Route::get('/kpis',    [DashboardController::class, 'kpis'])
+             ->name('dashboard.kpis');      // /dashboard/kpis
+    });
+
 
     Route::middleware(CheckPermission::class . ':users.index')->group(function () {
         Route::resource('usuarios', UserController::class);
@@ -41,12 +53,12 @@ Route::middleware('auth')->group(function () {
              ->parameters(['productos' => 'product'])   // importante para binding
              ->names('products');                       // mantiene names = products.*
     });
+
+    // Rutas de ventas modificada para que funcione correctamente
+    Route::resource('ventas', SaleController::class)
+      ->parameters(['ventas'=>'sale'])
+      ->names('sales');
     
-    Route::middleware(CheckPermission::class . ':sales.index')->group(function () {
-        Route::resource('ventas', SaleController::class)
-             ->parameters(['ventas' => 'sale'])   // importante para el binding con el modelo `Venta`
-             ->names('sales');                     // para usar names como sales.index, sales.create, etc.
-    });
 
     Route::middleware(CheckPermission::class . ':clientes.index')->group(function () {
         Route::resource('clientes', ClienteController::class)
@@ -58,6 +70,12 @@ Route::middleware('auth')->group(function () {
         Route::resource('insumos', InsumoController::class)
              ->parameters(['insumos' => 'insumo'])   // importante para el binding con el modelo `Insumo`
              ->names('insumos');                     // para usar names como insumos.index, insumos.create, etc.
+    });
+
+    Route::middleware(CheckPermission::class . ':proveedores.index')->group(function () {
+        Route::resource('proveedores', ProveedorController::class)
+             ->parameters(['proveedores' => 'proveedor'])
+             ->names('proveedores');
     });
 
     Route::middleware(CheckPermission::class . ':recetas.index')->group(function () {

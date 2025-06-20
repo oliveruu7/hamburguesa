@@ -5,7 +5,8 @@
 @section('content')
 <div class="container mt-5">
     <div class="card shadow border-0">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background:#2471a3;">
+
             <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i> Perfil del Usuario</h5>
             <a href="{{ route('usuarios.index') }}" class="btn btn-sm btn-light">
                 <i class="bi bi-arrow-left-circle"></i> Volver
@@ -24,10 +25,7 @@
 
                     <div class="mt-3">
                         @if($usuario->perfil_link)
-                            <a href="{{ $usuario->perfil_link }}" target="_blank" rel="noopener"
-                               class="btn btn-sm btn-outline-info w-100">
-                                <i class="bi bi-box-arrow-up-right"></i> Abrir Perfil
-                            </a>
+                           
                         @else
                             <span class="badge bg-secondary w-100">Sin perfil asignado</span>
                         @endif

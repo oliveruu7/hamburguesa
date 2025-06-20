@@ -4,7 +4,7 @@
 @section('content')
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="text-primary">
+    <h3 class="fw-bold" style="color:#008080">
       <i class="bi bi-list-ul me-2"></i> Lista de Recetas
     </h3>
     @permiso('recetas.create')
