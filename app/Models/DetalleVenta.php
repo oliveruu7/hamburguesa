@@ -16,6 +16,6 @@ class DetalleVenta extends Model
     ];
 
     public function venta():       BelongsTo { return $this->belongsTo(Venta::class,'idventa'); }
-    public function hamburguesa(): BelongsTo { return $this->belongsTo(Hamburguesa::class,'idhamburguesa'); }
-    
+    public function hamburguesa(): BelongsTo { return $this->belongsTo(Product::class,'idhamburguesa'); }
+
 }

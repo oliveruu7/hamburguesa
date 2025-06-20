@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
-    public function __construct()
+     public function __construct()
     {
-      $this->middleware(Perm::class.':sales.index' ) ->only('index');
-      $this->middleware(Perm::class.':sales.create')->only(['create','store']);
-      $this->middleware(Perm::class.':sales.edit'  )->only(['edit','update']);    
-      $this->middleware(Perm::class.':sales.delete')->only('destroy');
+        $this->middleware(Perm::class.':sales.index')->only('index');
+        $this->middleware(Perm::class.':sales.create')->only(['create','store']);
+        // sin edit/update
+        $this->middleware(Perm::class.':sales.delete')->only('destroy');
     }
 
 

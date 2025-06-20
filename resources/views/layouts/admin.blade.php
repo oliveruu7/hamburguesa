@@ -245,6 +245,17 @@ body{
                 </li>
             @endpermiso
 
+          @permiso('reports.view')
+<li>
+  <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"
+     href="{{ route('reports.index') }}">
+     <i class="bi bi-graph-up-arrow me-2"></i> Reportes
+  </a>
+</li>
+@endpermiso
+
+
+
             {{-- ===== Cerrar sesión ===== --}}
 <li>
     {{-- evita acción por defecto para manejarla con JS --}}

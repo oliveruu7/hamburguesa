@@ -14,6 +14,7 @@ use App\Http\Controllers\CompraController;
 use App\Http\Controllers\SalidaController;
 use App\Http\Controllers\DashboardController; 
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\ReportController;
 
 /* ---------- LOGIN ---------- */
 Route::get('/', fn () => redirect()->route('login'));
@@ -98,6 +99,13 @@ Route::middleware(CheckPermission::class.':salidas.index')->group(function () {
          ->names('salidas');
     
 });
+
+Route::middleware(CheckPermission::class . ':reports.view')->group(function () {
+    Route::get('/reportes',             [ReportController::class,'index'    ])->name('reports.index');
+    Route::get('/reportes/ventas',      [ReportController::class,'sales'    ])->middleware(CheckPermission::class . ':reports.sales'    )->name('reports.sales');
+    Route::get('/reportes/compras',     [ReportController::class,'purchases'])->middleware(CheckPermission::class . ':reports.purchases')->name('reports.purchases');
+});
+
 
 
 });
