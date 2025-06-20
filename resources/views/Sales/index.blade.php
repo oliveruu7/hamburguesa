@@ -21,11 +21,11 @@
     </div>
   </div>
 
-  {{-- ===== Alertas ===== --}}
-  @foreach(['success'=>'success','error'=>'danger','info'=>'info'] as $k=>$c)
-    @if(session($k))
-      <div class="alert alert-{{ $c }} alert-dismissible fade show" role="alert">
-        {{ session($k) }}
+  {{-- ===== Alertas de sesión ===== --}}
+  @foreach(['success'=>'success','error'=>'danger','info'=>'info'] as $tipo=>$color)
+    @if(session($tipo))
+      <div class="alert alert-{{ $color }} alert-dismissible fade show" role="alert">
+        {!! nl2br(e(session($tipo))) !!}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     @endif
@@ -60,12 +60,11 @@
                 </span>
               </td>
               <td>
-                <a href="{{ route('sales.show',$v) }}" class="btn btn-sm btn-outline-primary"
-                    title="Ver detalle">
+                <a href="{{ route('sales.show', $v) }}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
                   <i class="bi bi-eye-fill"></i>
                 </a>
                 @permiso('sales.edit')
-                  <a href="{{ route('sales.edit',$v) }}" class="btn btn-sm btn-outline-warning" title="Editar">
+                  <a href="{{ route('sales.edit', $v) }}" class="btn btn-sm btn-outline-warning" title="Editar">
                     <i class="bi bi-pencil-fill"></i>
                   </a>
                 @endpermiso
@@ -81,10 +80,6 @@
     </div>
   </div>
 
-  {{-- ===== Paginación ===== --}}
-  <div class="mt-3 d-flex justify-content-end">
-    {{ $ventas->links() }}
-  </div>
-
+   
 </div>
 @endsection

@@ -57,63 +57,90 @@ class SalidaController extends Controller
     }
 
     /* ───── STORE ───── */
-     public function store(Request $r)
+   /* ───── STORE ───── */
+public function store(Request $r)
 {
-    /* 0. ¿ya existe salida para ese día? */
+    /* 0.  ¿ya existe salida para ese día? */
     if (SalidaInsumo::whereDate('fecha', $r->fecha)->exists()) {
-        return back()->with('error','Ya existe una salida para esa fecha.')->withInput();
+        return back()->with('error', 'Ya existe una salida para esa fecha.')
+                     ->withInput();
     }
 
-    /* 1. Validación */
+    /* 1.  Validación Laravel */
     $r->validate([
         'fecha'               => 'required|date',
         'detalles'            => 'required|array|size:8',
         'detalles.*.idinsumo' => 'required|exists:insumo,idinsumo|distinct',
         'detalles.*.cantidad' => 'required|numeric|min:0.01',
-    ],[
+    ], [
         'detalles.size' => 'Debes registrar exactamente los 8 insumos.',
     ]);
 
-    /* 2. Verificación de mínimos (igual que antes) */
-    $det        = $r->detalles;
-    $minimos    = collect($this->base());
-    foreach ($det as $d){
-        if ($d['cantidad'] < $minimos[$d['idinsumo']]){
+    $detalles = collect($r->detalles);                 // ↙️ Eloquent-friendly
+    $minimos  = collect($this->base());                // cant. mínimas
+
+    /* 2-A.  Verifica cantidades mínimas de la plantilla .. */
+    foreach ($detalles as $d) {
+        if ($d['cantidad'] < $minimos[$d['idinsumo']]) {
             $nom = Insumo::find($d['idinsumo'])->nombre;
-            return back()->with('error',"Cantidad de «$nom» insuficiente (mínimo {$minimos[$d['idinsumo']]}).")
+            return back()->with('error',
+                    "Cantidad de «$nom» insuficiente (mínimo {$minimos[$d['idinsumo']]}).")
                          ->withInput();
         }
     }
 
-    /* 3. Transacción: inserta Salida + Detalles */
+    /* 2-B.  Verifica stock disponible ANTES de grabar           */
+    $faltantes = [];
+    $ids       = $detalles->pluck('idinsumo');
+    $stocks    = Insumo::whereIn('idinsumo', $ids)
+                       ->pluck('stock_actual', 'idinsumo');   // [id => stock]
+
+    foreach ($detalles as $d) {
+        $disp = $stocks[$d['idinsumo']] ?? 0;
+        if ($disp - $d['cantidad'] < 0) {                    // → quedaría negativo
+            $faltantes[] = Insumo::find($d['idinsumo'])->nombre
+                        ." (stock: $disp / solicita: {$d['cantidad']})";
+        }
+    }
+
+    if ($faltantes) {
+        return back()->with('error',
+            'No hay insumo suficiente: '.implode(', ', $faltantes).'.')->withInput();
+    }
+
+    /* 3.  Transacción */
     DB::beginTransaction();
-    try{
+    try {
         $salida = SalidaInsumo::create([
-            'fecha'       => $r->fecha,          // solo DATE
+            'fecha'       => $r->fecha,
             'observacion' => $r->observacion,
             'idusuario'   => Auth::id(),
         ]);
 
-        foreach ($det as $d){
+        foreach ($detalles as $d) {
             DetalleSalidaInsumo::create([
                 'idsalida' => $salida->idsalida,
                 'idinsumo' => $d['idinsumo'],
                 'cantidad' => $d['cantidad'],
             ]);
+
+            // 3-B  descuenta el stock en la misma transacción
+            Insumo::where('idinsumo', $d['idinsumo'])
+                  ->decrement('stock_actual', $d['cantidad']);
         }
 
-        DB::commit();          // ✅ confirma primero
-    }catch(\Throwable $e){
+        DB::commit();
+    } catch (\Throwable $e) {
         DB::rollBack();
-        return back()->with('error','Error: '.$e->getMessage())->withInput();
+        return back()->with('error', 'Error: '.$e->getMessage())->withInput();
     }
 
-    /* 4. Ahora sí llama a la SP (ya ve la salida confirmada) */
+    /* 4.  Actualiza stock del menú  */
     DB::statement('CALL generar_stock_menu(?)', [$r->fecha]);
 
     return redirect()
            ->route('salidas.index')
-           ->with('success','Salida registrada y stock de menú actualizado.');
+           ->with('success', 'Salida registrada y stock de menú actualizado.');
 }
 
 }

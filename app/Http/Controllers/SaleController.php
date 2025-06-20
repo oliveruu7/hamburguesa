@@ -89,7 +89,66 @@ public function store(Request $request)
 }
 
 
+/* ===== FORMULARIO DE EDICIÓN ===== */
+    public function edit(Venta $sale)          //  route('sales.edit', $venta)
+    {
+        $sale->load(['detalles']);             // productos actuales
+        return view('sales.edit', [
+            'venta'     => $sale,
+            'clientes'  => Cliente::orderBy('nombre')->get(),
+            'productos' => Product::where('estado',1)->get(),
+        ]);
+    }
 
+    /* ===== ACTUALIZAR ===== */
+    public function update(Request $request, Venta $sale)
+    {
+        $request->validate([
+            'idcliente'                   => ['required','exists:cliente,idcliente'],
+            'productos'                   => ['required','array','min:1'],
+            'productos.*.idhamburguesa'   => ['required','exists:hamburguesa,idhamburguesa'],
+            'productos.*.cantidad'        => ['required','integer','min:1'],
+            'productos.*.precio_unitario' => ['required','numeric','min:0'],
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $sale) {
+
+                /* 1) Elimina detalles viejos */
+                $sale->detalles()->delete();
+
+                /* 2) Calcula nuevo total e inserta detalles */
+                $total = collect($request->productos)
+                         ->sum(fn($p) => $p['cantidad'] * $p['precio_unitario']);
+
+                $sale->update([
+                    'idcliente' => $request->idcliente,
+                    'total'     => $total,
+                ]);
+
+                foreach ($request->productos as $p) {
+                    DetalleVenta::create([
+                        'idventa'        => $sale->idventa,
+                        'idhamburguesa'  => $p['idhamburguesa'],
+                        'cantidad'       => $p['cantidad'],
+                        'precio_unitario'=> $p['precio_unitario'],
+                        'subtotal'       => $p['cantidad'] * $p['precio_unitario'],
+                    ]);
+                }
+            });
+
+            return redirect()->route('sales.index')
+                             ->with('success','Venta actualizada correctamente.');
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] == 1644) {     // stock insuficiente (trigger)
+                return back()->withInput()->with('error', $e->errorInfo[2]);
+            }
+            return back()->withInput()->with('error', 'Error SQL: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', 'Error: '.$e->getMessage());
+        }
+    }
 
     /* ===== DETALLE ===== */
     public function show(Venta $sale)   // Route-model binding usa parámetro 'sale'

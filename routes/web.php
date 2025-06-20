@@ -55,9 +55,11 @@ Route::middleware('auth')->group(function () {
     });
 
     // Rutas de ventas modificada para que funcione correctamente
+    Route::middleware(CheckPermission::class.':sales.index')->group(function () {
     Route::resource('ventas', SaleController::class)
-      ->parameters(['ventas'=>'sale'])
-      ->names('sales');
+         ->parameters(['ventas' => 'sale'])  // usa 'sale' en el controller
+         ->names('sales');                  // los nombres serán sales.index, sales.show, etc.
+  });
     
 
     Route::middleware(CheckPermission::class . ':clientes.index')->group(function () {
